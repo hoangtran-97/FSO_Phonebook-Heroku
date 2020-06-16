@@ -8,6 +8,7 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(morgan(":type"));
+app.use(express.static("build"));
 morgan.token("type", function(req, res) {
     return JSON.stringify(req.body);
 });
