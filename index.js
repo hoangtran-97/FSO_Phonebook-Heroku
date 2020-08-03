@@ -39,13 +39,13 @@ let persons = [
 const generateId = () => {
     return Math.floor(Math.random() * Math.floor(200));
 };
-//All
+//All Mongo
 app.get("/api/persons", (req, res) => {
     Person.find({}).then((persons) => {
         res.json(persons);
     });
 });
-//Info
+//Info Mongo
 app.get("/info", (req, res) => {
     Person.find({}).then((persons) => {
         const today = new Date();
@@ -54,7 +54,7 @@ app.get("/info", (req, res) => {
                 `);
     });
 });
-//by ID
+//by ID Mongo
 app.get("/api/persons/:id", (request, response) => {
     Person.findById(request.params.id).then((person) => {
         if (person) {
@@ -91,15 +91,25 @@ app.post("/api/persons", (request, response) => {
             error: "name must be unique",
         });
     }
-    const person = {
+    //OLD way
+    // const person = {
+    //     name: body.name,
+    //     number: body.number,
+    //     id: generateId(),
+    // };
+
+    // persons = persons.concat(person);
+
+    // response.json(person);
+
+    const person = new Person({
         name: body.name,
         number: body.number,
         id: generateId(),
-    };
-
-    persons = persons.concat(person);
-
-    response.json(person);
+    });
+    person.save().then((savedPerson) => {
+        response.json(savedPerson);
+    });
 });
 
 app.listen(PORT, () => {
