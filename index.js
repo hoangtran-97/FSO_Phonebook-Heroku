@@ -65,13 +65,14 @@ app.get("/api/persons/:id", (request, response) => {
     });
 });
 //Delete
-app.delete("/api/persons/:id", (request, response) => {
-    const id = Number(request.params.id);
-    persons = persons.filter((person) => person.id !== id);
-
-    response.status(204).end();
+app.delete("/api/persons/:id", (request, response, next) => {
+    Person.findByIdAndRemove(request.params.id)
+        .then((result) => {
+            response.status(204).end();
+        })
+        .catch((error) => next(error));
 });
-//Post
+//Post Mongo
 app.post("/api/persons", (request, response) => {
     const body = request.body;
 
@@ -111,6 +112,31 @@ app.post("/api/persons", (request, response) => {
         response.json(savedPerson);
     });
 });
+//Put Mongo
+app.put("/api/persons/:id", (request, response, next) => {
+    const body = request.body;
+
+    const person = {
+        number: body.number,
+    };
+
+    Person.findByIdAndUpdate(request.params.id, person, {new: true})
+        .then((updatedPerson) => {
+            response.json(updatedPerson);
+        })
+        .catch((error) => next(error));
+});
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message);
+
+    if (error.name === "CastError") {
+        return response.status(400).send({error: "malformatted id"});
+    }
+
+    next(error);
+};
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
