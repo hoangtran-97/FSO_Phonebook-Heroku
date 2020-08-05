@@ -3,6 +3,8 @@ const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const mongoose = require("mongoose");
+mongoose.set("useCreateIndex", true);
+mongoose.set("useFindAndModify", false);
 const app = express();
 const PORT = process.env.PORT || 3001;
 const Person = require("./models/person");
@@ -73,25 +75,25 @@ app.delete("/api/persons/:id", (request, response, next) => {
         .catch((error) => next(error));
 });
 //Post Mongo
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
     const body = request.body;
 
-    if (!body.name) {
-        return response.status(400).json({
-            error: "name is missing",
-        });
-    }
-    if (!body.number) {
-        return response.status(400).json({
-            error: "number is missing",
-        });
-    }
-    const checkPerson = persons.find((person) => person.name === body.name);
-    if (checkPerson) {
-        return response.status(400).json({
-            error: "name must be unique",
-        });
-    }
+    // if (!body.name) {
+    //     return response.status(400).json({
+    //         error: "name is missing",
+    //     });
+    // }
+    // if (!body.number) {
+    //     return response.status(400).json({
+    //         error: "number is missing",
+    //     });
+    // }
+    // const checkPerson = persons.find((person) => person.name === body.name);
+    // if (checkPerson) {
+    //     return response.status(400).json({
+    //         error: "name must be unique",
+    //     });
+    // }
     //OLD way
     // const person = {
     //     name: body.name,
@@ -108,9 +110,14 @@ app.post("/api/persons", (request, response) => {
         number: body.number,
         id: generateId(),
     });
-    person.save().then((savedPerson) => {
-        response.json(savedPerson);
-    });
+    person
+        .save()
+        .then((savedPerson) => {
+            response.json(savedPerson);
+        })
+        .catch((error) => {
+            next(error);
+        });
 });
 //Put Mongo
 app.put("/api/persons/:id", (request, response, next) => {
@@ -120,7 +127,7 @@ app.put("/api/persons/:id", (request, response, next) => {
         number: body.number,
     };
 
-    Person.findByIdAndUpdate(request.params.id, person, {new: true})
+    Person.findByIdAndUpdate(request.params.id, person, {new: true, runValidators: true})
         .then((updatedPerson) => {
             response.json(updatedPerson);
         })
@@ -131,6 +138,8 @@ const errorHandler = (error, request, response, next) => {
 
     if (error.name === "CastError") {
         return response.status(400).send({error: "malformatted id"});
+    } else if (error.name === "ValidationError") {
+        return response.status(400).json({error: error.message});
     }
 
     next(error);
